@@ -283,11 +283,11 @@ async function fetchAllMetrics() {
   console.log('[marketData] BTC 24h:', btcReturn24h !== null ? `${btcReturn24h?.toFixed(2)}%` : 'FAILED')
   console.log('[marketData] ETH 24h:', ethReturn24h !== null ? `${ethReturn24h?.toFixed(2)}%` : 'FAILED')
 
-  // Step 2: Fetch OHLC per coin in batches of 5 (respect rate limit)
-  // CoinGecko free tier: ~10-30 req/min. 20 coins + 1 markets = 21 calls total.
-  // With 500ms delay between batches of 5 we stay well under limits.
+  // Step 2: Fetch OHLC per coin in batches (respect rate limit but don't be too slow)
+  // CoinGecko free tier: ~10-30 req/min. We already used 1 call for markets.
+  // 20 OHLC calls in batches of 10 with 300ms gap = ~1s total vs 2s before.
   const ohlcBySymbol = {}
-  const batchSize = 5
+  const batchSize = 10
 
   for (let i = 0; i < COIN_UNIVERSE.length; i += batchSize) {
     const batch = COIN_UNIVERSE.slice(i, i + batchSize)
@@ -302,7 +302,7 @@ async function fetchAllMetrics() {
       ohlcBySymbol[sym] = ohlc
     }
     if (i + batchSize < COIN_UNIVERSE.length) {
-      await new Promise(r => setTimeout(r, 500))
+      await new Promise(r => setTimeout(r, 300))
     }
   }
 

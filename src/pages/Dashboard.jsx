@@ -111,7 +111,9 @@ export default function Dashboard() {
             Last scan: {new Date(scanResult.timestamp).toLocaleTimeString()} ·{' '}
             {scanResult.meta?.totalScanned} coins · {topSignals.length} signals found
             {scanResult.meta?.diagnostics && ` · ${scanResult.meta.diagnostics.successCount}/${scanResult.meta.diagnostics.total} fetched`}
-            {!scanResult.meta?.aiAvailable && ' · AI unavailable — deterministic only'}
+            {scanResult.meta?.gptAvailable && scanResult.meta?.claudeAvailable
+              ? ' · GPT + Claude active'
+              : ' · AI keys missing — check Netlify env vars'}
           </span>
         )}
       </div>

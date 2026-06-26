@@ -147,7 +147,7 @@ export function SignalCard({ signal }) {
       )}
 
       {/* AI analysis */}
-      {(gpt || claude) && (
+      {(gpt || claude) ? (
         <div className="ai-section">
           {gpt && (
             <div className="ai-block gpt">
@@ -175,6 +175,15 @@ export function SignalCard({ signal }) {
               )}
             </div>
           )}
+        </div>
+      ) : (
+        <div className="ai-section">
+          <div className="ai-block" style={{ borderLeftColor: 'var(--border)', opacity: 0.5 }}>
+            <div className="ai-tag">AI Analysis</div>
+            <div className="ai-text" style={{ color: 'var(--text-muted)' }}>
+              GPT + Claude analysis unavailable — deterministic signal only. Check that OPENAI_API_KEY and ANTHROPIC_API_KEY are set in Netlify environment variables.
+            </div>
+          </div>
         </div>
       )}
 

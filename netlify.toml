@@ -6,6 +6,12 @@
 [build.environment]
   NODE_VERSION = "18"
 
+[functions]
+  node_bundler = "esbuild"
+
+[functions."scan-market"]
+  timeout = 26
+
 [[redirects]]
   from = "/*"
   to = "/index.html"

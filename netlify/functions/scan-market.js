@@ -84,18 +84,41 @@ exports.handler = async (event) => {
     const openaiKey    = process.env.OPENAI_API_KEY
     const anthropicKey = process.env.ANTHROPIC_API_KEY
 
+    console.log(`[scan] Running AI on ${top5.length} candidates. GPT: ${!!openaiKey}, Claude: ${!!anthropicKey}`)
+
+    // Run all GPT calls in parallel (not sequential) to stay within timeout
+    const gptResults = await Promise.all(
+      top5.map(candidate =>
+        openaiKey
+          ? runGptAnalysis(candidate, candidate.signal, openaiKey).catch(e => {
+              console.error(`[scan] GPT failed for ${candidate.symbol}:`, e.message)
+              return null
+            })
+          : Promise.resolve(null)
+      )
+    )
+    console.log(`[scan] GPT done. Results: ${gptResults.filter(Boolean).length}/${top5.length}`)
+
+    // Run all Claude calls in parallel
+    const claudeResults = await Promise.all(
+      top5.map((candidate, i) => {
+        const gptAnalysis = gptResults[i]
+        return (anthropicKey && gptAnalysis)
+          ? runClaudeChallenge(candidate, candidate.signal, gptAnalysis, anthropicKey).catch(e => {
+              console.error(`[scan] Claude failed for ${candidate.symbol}:`, e.message)
+              return null
+            })
+          : Promise.resolve(null)
+      })
+    )
+    console.log(`[scan] Claude done. Results: ${claudeResults.filter(Boolean).length}/${top5.length}`)
+
     const signalResults = []
 
-    for (const candidate of top5) {
-      console.log(`[scan] Analysing ${candidate.symbol}...`)
-
-      const gptAnalysis = openaiKey
-        ? await runGptAnalysis(candidate, candidate.signal, openaiKey)
-        : null
-
-      const claudeChallenge = (anthropicKey && gptAnalysis)
-        ? await runClaudeChallenge(candidate, candidate.signal, gptAnalysis, anthropicKey)
-        : null
+    for (let i = 0; i < top5.length; i++) {
+      const candidate      = top5[i]
+      const gptAnalysis    = gptResults[i]
+      const claudeChallenge = claudeResults[i]
 
       const combined = combineFinalVerdict(
         candidate.signal.verdict, gptAnalysis, claudeChallenge
